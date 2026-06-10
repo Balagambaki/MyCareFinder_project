@@ -35,18 +35,6 @@ export default function Search() {
     Number(searchParams.get("radius")) || 10
   );
 
-  useEffect(() => {
-  const params = new URLSearchParams();
-
-  if (query) params.set("query", query);
-  if (city) params.set("city", city);
-  if (specialty) params.set("specialty", specialty);
-  if (ownership) params.set("ownership", ownership);
-  if (radius) params.set("radius", String(radius));
-
-  setSearchParams(params, { replace: true });
-}, [query, city, specialty, ownership, radius]);
-
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
 
@@ -115,43 +103,57 @@ export default function Search() {
   // ==============================
   // FILTER + SEARCH PIPELINE
   // ==============================
-  const processedHospitals = useMemo(() => {
-    return hospitals
-      .filter((h) => {
-        const text = query.toLowerCase();
+  
+ const normalize = (v?: string) =>
+  v?.toLowerCase().trim().replace(/\s+/g, " ") || "";
 
-        const matchesText =
-          h.name?.toLowerCase().includes(text) ||
-          h.city?.toLowerCase().includes(text) ||
-          h.lga?.toLowerCase().includes(text) ||
-          h.address?.toLowerCase().includes(text);
+const processedHospitals = useMemo(() => {
+  return hospitals
+    .filter((h) => {
+      const text = normalize(query);
 
-        const matchesCity = !city || h.city === city;
-        const matchesSpecialty = !specialty || h.specialty === specialty;
-        const matchesOwnership = !ownership || h.ownership === ownership;
+      const matchesText =
+        normalize(h.name).includes(text) ||
+        normalize(h.city).includes(text) ||
+        normalize(h.lga).includes(text) ||
+        normalize(h.address).includes(text);
 
-        return matchesText && matchesCity && matchesSpecialty && matchesOwnership;
-      })
-      .map((h) => {
-        let distance = null;
+      const matchesCity =
+        !city || normalize(h.city) === normalize(city);
 
-        if (userLocation && h.latitude && h.longitude) {
-          distance = getDistance(
-            userLocation.lat,
-            userLocation.lng,
-            h.latitude,
-            h.longitude
-          );
-        }
+      const matchesSpecialty =
+        !specialty || normalize(h.specialty) === normalize(specialty);
 
-        return { ...h, distance };
-      })
-      .filter((h: any) => {
-        if (!h.distance) return true;
-        return h.distance <= radius;
-      })
-      .sort((a: any, b: any) => (a.distance || 9999) - (b.distance || 9999));
-  }, [hospitals, query, city, specialty, ownership, userLocation, radius]);
+      const matchesOwnership =
+        !ownership || normalize(h.ownership) === normalize(ownership);
+
+      return (
+        matchesText &&
+        matchesCity &&
+        matchesSpecialty &&
+        matchesOwnership
+      );
+    })
+    .map((h) => {
+      let distance = null;
+
+      if (userLocation && h.latitude && h.longitude) {
+        distance = getDistance(
+          userLocation.lat,
+          userLocation.lng,
+          h.latitude,
+          h.longitude
+        );
+      }
+
+      return { ...h, distance };
+    })
+    .filter((h: any) => {
+      if (h.distance == null) return true;
+      return h.distance <= radius;
+    })
+    .sort((a: any, b: any) => (a.distance || 9999) - (b.distance || 9999));
+}, [hospitals, query, city, specialty, ownership, userLocation, radius]);
 
   // ==============================
   // CSV EXPORT (PAPAPARSE)
