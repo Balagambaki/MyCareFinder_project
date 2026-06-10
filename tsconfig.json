@@ -5,8 +5,7 @@
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "strict": true,
-    "types": ["vite/client"],
-
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["vite/client"]
   }
 }
