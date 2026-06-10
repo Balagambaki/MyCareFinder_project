@@ -35,6 +35,18 @@ export default function Search() {
     Number(searchParams.get("radius")) || 10
   );
 
+  useEffect(() => {
+  const params = new URLSearchParams();
+
+  if (query) params.set("query", query);
+  if (city) params.set("city", city);
+  if (specialty) params.set("specialty", specialty);
+  if (ownership) params.set("ownership", ownership);
+  if (radius) params.set("radius", String(radius));
+
+  setSearchParams(params, { replace: true });
+}, [query, city, specialty, ownership, radius]);
+
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
 
